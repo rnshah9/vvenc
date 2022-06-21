@@ -1,5 +1,5 @@
 project: vvenc
-target: vvenc
+target: vvencFFapp
 testsuite:
   - file://test/data/RTn23_80x44p15_f15.yuv
 
