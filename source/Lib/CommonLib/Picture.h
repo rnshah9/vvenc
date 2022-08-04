@@ -120,6 +120,7 @@ struct Picture : public UnitArea
   void destroy( bool bPicHeader );
 
   void linkSharedBuffers( PelStorage* origBuf, PelStorage* filteredBuf, PelStorage* prevOrigBufs[ NUM_PREV_FRAMES ], PicShared* picShared );
+  void releasePrevBuffers();
   void releaseSharedBuffers();
 
   void createTempBuffers( unsigned _maxCUSize );
@@ -208,10 +209,10 @@ public:
   bool                          writePic;
   bool                          precedingDRAP; // preceding a DRAP picture in decoding order
 
+  const GOPEntry*               gopEntry;
+
   int                           refCounter;
   int                           poc;
-  int                           gopId;
-  int                           rcIdxInGop;
   unsigned                      TLayer;
   int                           layerId;
   bool                          isSubPicBorderSaved;
@@ -230,6 +231,7 @@ public:
   std::vector<Pel>              ctuAdaptedQP;
   std::mutex                    wppMutex;
   int                           picInitialQP;
+  double                        picInitialLambda;
   uint16_t                      picVisActTL0;
   uint16_t                      picVisActY;
   double                        psnr[MAX_NUM_COMP];

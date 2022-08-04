@@ -395,7 +395,9 @@ void MCTF::init( const VVEncCfg& encCfg, NoMallocThreadPool* threadPool )
   m_filterPoc  = 0;
 
   // TLayer (TL) dependent definition of drop frames: TL = 4,  TL = 3,  TL = 2,  TL = 1,  TL = 0
-  m_MCTFSpeedVal     = m_encCfg->m_vvencMCTF.MCTFSpeed > 1 ? ((3<<12) + (3<<9) + (3<<6) + (2<<3) + 0) : 0;
+  const static int sMCTFSpeed[4] { 0, ((3<<12) + (2<<9) + (2<<6) + (2<<3) + 0),   ((3<<12) + (3<<9) + (2<<6) + (2<<3) + 2),   ((3<<12) + (3<<9) + (3<<6) + (2<<3) + 2) };
+
+  m_MCTFSpeedVal     = sMCTFSpeed[ m_encCfg->m_vvencMCTF.MCTFSpeed ];
   m_lowResFltSearch  = m_encCfg->m_vvencMCTF.MCTFSpeed > 0;
   m_searchPttrn      = m_encCfg->m_vvencMCTF.MCTFSpeed > 0 ? 1 : 0;
 }
@@ -466,25 +468,18 @@ void MCTF::processPictures( const PicList& picList, bool flush, AccessUnitList& 
 
 void MCTF::filter( const std::deque<Picture*>& picFifo, int filterIdx )
 {
-  PROFILER_SCOPE_AND_STAGE( 1, _TPROF, P_MCTF );
+  PROFILER_SCOPE_AND_STAGE( 1, g_timeProfiler, P_MCTF );
 
-  double overallStrength = -1.0;
-  bool isFilterThisFrame = false;
-  int idx = (int)m_encCfg->m_vvencMCTF.numFrames - 1;
-  for( ; idx >= 0; idx-- )
-  {
-    if ( m_filterPoc % m_encCfg->m_vvencMCTF.MCTFFrames[ idx ] == 0 )
-    {
-      overallStrength   = m_encCfg->m_vvencMCTF.MCTFStrengths[ idx ];
-      isFilterThisFrame = true;
-      break;
-    }
-  }
+  Picture* pic = picFifo[ filterIdx ];
+
+  const int mctfIdx            = pic->gopEntry ? pic->gopEntry->m_mctfIndex : -1;
+  const double overallStrength = mctfIdx >= 0 ? m_encCfg->m_vvencMCTF.MCTFStrengths[ mctfIdx ] : -1.0;
+  bool  isFilterThisFrame      = mctfIdx >= 0;
 
   int dropFrames = 0;
-  if( idx >= 0 )
+  if( mctfIdx >= 0 )
   {
-    const int idxTLayer = m_encCfg->m_vvencMCTF.numFrames - (idx + 1);
+    const int idxTLayer = m_encCfg->m_vvencMCTF.numFrames - (mctfIdx + 1);
     const int threshold = (m_MCTFSpeedVal >> (idxTLayer * 3)) & 7;
 
     dropFrames          = std::min(VVENC_MCTF_RANGE, threshold);
@@ -496,7 +491,6 @@ void MCTF::filter( const std::deque<Picture*>& picFifo, int filterIdx )
   int dropFramesFront = std::min( std::max(                                          filterIdx - filterFrames, 0 ), dropFrames );
   int dropFramesBack  = std::min( std::max( static_cast<int>( picFifo.size() ) - 1 - filterIdx - filterFrames, 0 ), dropFrames );
 
-  Picture* pic = picFifo[ filterIdx ];
   if( ! pic->useScMCTF )
   {
     isFilterThisFrame = false;
