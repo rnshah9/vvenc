@@ -1,5 +1,5 @@
 project: vvenc
-target: vvencFFapp
+target: vvencffapp
 testsuite:
   - file://test/data/RTn23_80x44p15_f15.yuv
 
@@ -7,3 +7,4 @@ cmds:
   - cmd: /install/bin/vvencFFapp --InputFile /repo/test/data/RTn23_80x44p15_f15.yuv --SourceWidth 80 --SourceHeight 44 -b bit.266 -fr 3 -c @@
     env:
       DISABLE_SMOKETEST: '1'
+image: ghcr.io/rnshah9/playground:vvenc
