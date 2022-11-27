@@ -1,0 +1,7 @@
+project: vvenc
+target: vvenc-set-simd-extension
+
+cmds:
+  - cmd: /fuzz_vvenc_set_SIMD_extension
+    env:
+      ASAN_OPTIONS: detect_leaks=0

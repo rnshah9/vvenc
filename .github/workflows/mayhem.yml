@@ -51,7 +51,8 @@ jobs:
       fail-fast: false
       matrix:
         mayhemfile:
-          - mayhem/Mayhemfile
+          - mayhem/Mayhemfile_vvenc_set_SIMD_extension
+          - mayhem/Mayhemfile_vvencFFapp
 
     steps:
       - uses: actions/checkout@v2
